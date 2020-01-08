@@ -7,29 +7,32 @@ admin.initializeApp();
 const express = require("express");
 const app = express();
 
-exports.getHaiku = functions.https.onRequest((req, res) => {
+app.get("/get-haikus", (req, res) => {
   admin
     .firestore()
     .collection("haikus")
+    .orderBy("createdAt", "desc")
     .get()
     .then(data => {
       let haikus = [];
       data.forEach(doc => {
-        haikus.push(doc.data());
+        haikus.push({
+          haikuId: doc.id,
+          body: doc.data().body,
+          userHandle: doc.data().userHandle,
+          createdAt: doc.data().createdAt
+        });
       });
       return res.json(haikus);
     })
     .catch(err => console.error(err));
 });
 
-exports.createHaiku = functions.https.onRequest((req, res) => {
-  if (req.method != "POST") {
-    return res.status(400).json({ error: "Method not allowed." });
-  }
+app.post("/create-haiku", (req, res) => {
   const newHaiku = {
     body: req.body.body,
     userHandle: req.body.userHandle,
-    createdAt: admin.firestore.Timestamp.fromDate(new Date())
+    createdAt: new Date().toISOString()
   };
 
   admin
@@ -44,3 +47,6 @@ exports.createHaiku = functions.https.onRequest((req, res) => {
       console.error(err);
     });
 });
+
+// Creates multiple routes
+exports.api = functions.https.onRequest(app);
