@@ -43,11 +43,50 @@ app.get("/get-haikus", (req, res) => {
     .catch(err => console.error(err));
 });
 
+const FBAuth = (req, res, next) => {
+  let idToken;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    idToken = req.headers.authorization.split(" ")[1];
+  } else {
+    console.error("No token found");
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  admin
+    .auth()
+    .verifyIdToken(idToken)
+    .then(decodedToken => {
+      req.user = decodedToken;
+      console.log(decodedToken);
+      return admin
+        .firestore()
+        .collection("users")
+        .where("userId", "==", req.user.uid)
+        .limit(1)
+        .get();
+    })
+    .then(data => {
+      req.user.userHandle = data.docs[0].data().userHandle;
+      return next();
+    })
+    .catch(err => {
+      console.error("Error while verifying token", err);
+      return res.status(403).json(err);
+    });
+};
+
 // route for creating a haiku
-app.post("/create-haiku", (req, res) => {
+app.post("/create-haiku", FBAuth, (req, res) => {
+  if (isEmptyStr(req.body.body)) {
+    return res.status(400).json({ body: "Body must not be empty" });
+  }
+
   const newHaiku = {
     body: req.body.body,
-    userHandle: req.body.userHandle,
+    userHandle: req.user.userHandle,
     createdAt: new Date().toISOString()
   };
 
