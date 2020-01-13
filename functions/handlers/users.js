@@ -25,7 +25,7 @@ exports.signup = (req, res) => {
 
   const noImage = "no-img.png";
 
-  let token, userId;
+  let token, userID;
   admin
     .firestore()
     .doc(`/users/${newUser.userHandle}`)
@@ -42,7 +42,7 @@ exports.signup = (req, res) => {
       }
     })
     .then(data => {
-      userId = data.user.uid;
+      userID = data.user.uid;
       return data.user.getIdToken();
     })
     .then(idToken => {
@@ -52,7 +52,7 @@ exports.signup = (req, res) => {
         email: newUser.email,
         createdAt: new Date().toISOString(),
         imageURL: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImage}?alt=media`,
-        userId: userId
+        userID: userID
       };
       admin
         .firestore()

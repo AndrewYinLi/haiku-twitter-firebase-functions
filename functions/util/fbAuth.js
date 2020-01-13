@@ -20,12 +20,13 @@ module.exports = (req, res, next) => {
       return admin
         .firestore()
         .collection("users")
-        .where("userId", "==", req.user.uid)
+        .where("userID", "==", req.user.uid)
         .limit(1)
         .get();
     })
     .then(data => {
       req.user.userHandle = data.docs[0].data().userHandle;
+      req.user.imageURL = data.docs[0].data().imageURL;
       return next();
     })
     .catch(err => {

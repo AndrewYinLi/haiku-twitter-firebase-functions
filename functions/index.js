@@ -4,7 +4,12 @@ const express = require("express");
 const app = express();
 
 const FBAuth = require("./util/fbAuth");
-const { getHaikus, createHaiku } = require("./handlers/haikus");
+const {
+  getHaikus,
+  createHaiku,
+  getHaiku,
+  commentOnHaiku
+} = require("./handlers/haikus");
 const {
   signup,
   login,
@@ -14,8 +19,14 @@ const {
 } = require("./handlers/users");
 
 // routes for haikus
-app.get("/get-haikus", getHaikus);
-app.post("/create-haiku", FBAuth, createHaiku);
+app.get("/haikus", getHaikus);
+app.post("/haiku", FBAuth, createHaiku);
+app.get("/haiku/:haikuID", getHaiku);
+// TODO: delete haiku
+// TODO: like haiku
+// TODO: unlike haiku
+app.post("/haiku/:haikuID/comment", FBAuth, commentOnHaiku);
+
 // routes for users
 app.post("/signup", signup);
 app.post("/login", login);
