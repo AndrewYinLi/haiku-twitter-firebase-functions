@@ -10,7 +10,8 @@ const {
   getHaiku,
   commentOnHaiku,
   likeHaiku,
-  unlikeHaiku
+  unlikeHaiku,
+  deleteHaiku
 } = require("./handlers/haikus");
 const {
   signup,
@@ -24,7 +25,7 @@ const {
 app.get("/haikus", getHaikus);
 app.post("/haiku", FBAuth, createHaiku);
 app.get("/haiku/:haikuID", getHaiku);
-// TODO: delete haiku
+app.delete("/haiku/:haikuID", FBAuth, deleteHaiku);
 app.get("/haiku/:haikuID/like", FBAuth, likeHaiku);
 app.get("/haiku/:haikuID/unlike", FBAuth, unlikeHaiku);
 app.post("/haiku/:haikuID/comment", FBAuth, commentOnHaiku);

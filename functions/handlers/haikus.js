@@ -104,6 +104,9 @@ exports.commentOnHaiku = (req, res) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Haiku not found" });
       }
+      return doc.ref.update({ commentCount: doc.data().commentCount + 1 });
+    })
+    .then(() => {
       return admin
         .firestore()
         .collection("comments")
@@ -209,5 +212,28 @@ exports.unlikeHaiku = (req, res) => {
     .catch(err => {
       console.error(err);
       res.status(500).json({ error: err.code });
+    });
+};
+
+exports.deleteHaiku = (req, res) => {
+  const haikuDoc = admin.firestore().doc(`/haikus/${req.params.haikuID}`);
+  haikuDoc
+    .get()
+    .then(doc => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Haiku not found" });
+      }
+      if (doc.data().userHandle !== req.user.userHandle) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else {
+        return haikuDoc.delete();
+      }
+    })
+    .then(() => {
+      res.json({ message: "Haiku deleted successfully" });
+    })
+    .catch(err => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
     });
 };
