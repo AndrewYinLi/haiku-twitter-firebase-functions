@@ -29,7 +29,10 @@ exports.createHaiku = (req, res) => {
   const newHaiku = {
     body: req.body.body,
     userHandle: req.user.userHandle,
-    createdAt: new Date().toISOString()
+    userImage: req.user.imageURL,
+    createdAt: new Date().toISOString(),
+    likeCount: 0,
+    commentCount: 0
   };
 
   admin
@@ -37,7 +40,9 @@ exports.createHaiku = (req, res) => {
     .collection("haikus")
     .add(newHaiku)
     .then(doc => {
-      res.json({ message: `document ${doc.id} created successfully` });
+      const resHaiku = newHaiku;
+      resHaiku.haikuID = doc.id;
+      res.json({ resHaiku });
     })
     .catch(err => {
       res.status(500).json({ error: "Something went wrong :(" });
@@ -112,3 +117,53 @@ exports.commentOnHaiku = (req, res) => {
       res.status(500).json({ error: "Something went wrong" });
     });
 };
+
+exports.likeHaiku = (req, res) => {
+  const likeDoc = admin
+    .firestore()
+    .collection("likes")
+    .where("userHandle", "==", req.userHandle)
+    .where("haikuID", "==", req.params.haikuID)
+    .limit(1);
+
+  const haikuDoc = admin.firestore().doc(`/haikus/${req.params.haikuID}`);
+
+  let haikuData;
+
+  haikuData
+    .get()
+    .then(doc => {
+      if (doc.exists) {
+        haikuData = doc.data();
+        haikuData.haikuID = doc.id;
+        return haikuDoc.get();
+      }
+      return res.status(404).json({ error: "Haiku not found" });
+    })
+    .then(data => {
+      if (data.empty) {
+        return admin
+          .firestore()
+          .collection("likes")
+          .add({
+            haikuID: req.params.haikuID,
+            userHandle: req.user.userHandle
+          })
+          .then(() => {
+            haikuData.likeCount++;
+            return haikuDoc.update({ likeCount: haikuData.likeCount });
+          })
+          .then(() => {
+            return res.json(haikuData);
+          });
+      } else {
+        return res.status(400).json({ error: "Haiku already liked" });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    });
+};
+
+exports.unlikeHaiku = (req, res) => {};

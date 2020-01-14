@@ -8,7 +8,9 @@ const {
   getHaikus,
   createHaiku,
   getHaiku,
-  commentOnHaiku
+  commentOnHaiku,
+  likeHaiku,
+  unlikeHaiku
 } = require("./handlers/haikus");
 const {
   signup,
@@ -23,8 +25,8 @@ app.get("/haikus", getHaikus);
 app.post("/haiku", FBAuth, createHaiku);
 app.get("/haiku/:haikuID", getHaiku);
 // TODO: delete haiku
-// TODO: like haiku
-// TODO: unlike haiku
+app.get("/haiku/:haikuID/like", FBAuth, likeHaiku);
+app.get("/haiku/:haikuID/unlike", FBAuth, unlikeHaiku);
 app.post("/haiku/:haikuID/comment", FBAuth, commentOnHaiku);
 
 // routes for users
