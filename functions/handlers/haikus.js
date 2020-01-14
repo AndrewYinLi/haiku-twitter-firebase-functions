@@ -122,7 +122,7 @@ exports.likeHaiku = (req, res) => {
   const likeDoc = admin
     .firestore()
     .collection("likes")
-    .where("userHandle", "==", req.userHandle)
+    .where("userHandle", "==", req.user.userHandle)
     .where("haikuID", "==", req.params.haikuID)
     .limit(1);
 
@@ -130,13 +130,13 @@ exports.likeHaiku = (req, res) => {
 
   let haikuData;
 
-  haikuData
+  haikuDoc
     .get()
     .then(doc => {
       if (doc.exists) {
         haikuData = doc.data();
         haikuData.haikuID = doc.id;
-        return haikuDoc.get();
+        return likeDoc.get();
       }
       return res.status(404).json({ error: "Haiku not found" });
     })
@@ -166,4 +166,48 @@ exports.likeHaiku = (req, res) => {
     });
 };
 
-exports.unlikeHaiku = (req, res) => {};
+exports.unlikeHaiku = (req, res) => {
+  const likeDoc = admin
+    .firestore()
+    .collection("likes")
+    .where("userHandle", "==", req.user.userHandle)
+    .where("haikuID", "==", req.params.haikuID)
+    .limit(1);
+
+  const haikuDoc = admin.firestore().doc(`/haikus/${req.params.haikuID}`);
+
+  let haikuData;
+
+  haikuDoc
+    .get()
+    .then(doc => {
+      if (doc.exists) {
+        haikuData = doc.data();
+        haikuData.haikuID = doc.id;
+        return likeDoc.get();
+      } else {
+        return res.status(404).json({ error: "Haiku not found" });
+      }
+    })
+    .then(data => {
+      if (data.empty) {
+        return res.status(400).json({ error: "Haiku not liked" });
+      } else {
+        return admin
+          .firestore()
+          .doc(`/likes/${data.docs[0].id}`)
+          .delete()
+          .then(() => {
+            haikuData.likeCount--;
+            return haikuDoc.update({ likeCount: haikuData.likeCount });
+          })
+          .then(() => {
+            res.json(haikuData);
+          });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    });
+};
