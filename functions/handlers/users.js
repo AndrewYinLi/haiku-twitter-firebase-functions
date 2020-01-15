@@ -87,6 +87,46 @@ exports.addUserDetails = (req, res) => {
     });
 };
 
+exports.getUserDetails = (req, res) => {
+  let userData = {};
+  admin
+    .firestore()
+    .doc(`/users/${req.params.userHandle}`)
+    .get()
+    .then(doc => {
+      if (doc.exists) {
+        userData.user = doc.data();
+        return admin
+          .firestore()
+          .collection("haikus")
+          .where("userHandle", "==", req.params.userHandle)
+          .orderBy("createdAt", "desc")
+          .get();
+      } else {
+        return res.status(404).json({ error: "User not found" });
+      }
+    })
+    .then(data => {
+      userData.haikus = [];
+      data.forEach(doc => {
+        userData.haikus.push({
+          body: doc.data().body,
+          createdAt: doc.data().createdAt,
+          userHandle: doc.data().userHandle,
+          userImage: doc.data().userImage,
+          likeCount: doc.data().likeCount,
+          commentCount: doc.data().commentCount,
+          haikuID: doc.id
+        });
+      });
+      return res.json(userData);
+    })
+    .catch(err => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+
 exports.getAuthenticatedUser = (req, res) => {
   let userData = {};
   admin
@@ -220,4 +260,23 @@ exports.uploadImage = (req, res) => {
       });
   });
   busboy.end(req.rawBody);
+};
+
+exports.markNotificationsRead = (req, res) => {
+  let batch = admin.firestore().batch();
+  req.body.forEach(notificationID => {
+    const notification = admin
+      .firestore()
+      .doc(`/notifications/${notificationID}`);
+    batch.update(notification, { read: true });
+  });
+  batch
+    .commit()
+    .then(() => {
+      return res.json({ message: "Notifications marked read" });
+    })
+    .catch(err => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
 };

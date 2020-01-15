@@ -21,7 +21,9 @@ const {
   login,
   uploadImage,
   addUserDetails,
-  getAuthenticatedUser
+  getAuthenticatedUser,
+  getUserDetails,
+  markNotificationsRead
 } = require("./handlers/users");
 
 // routes for haikus
@@ -39,6 +41,8 @@ app.post("/login", login);
 app.post("/user/image", FBAuth, uploadImage);
 app.post("/user", FBAuth, addUserDetails);
 app.get("/user", FBAuth, getAuthenticatedUser);
+app.get("/user/:userHandle", getUserDetails);
+app.post("/notifications", FBAuth, markNotificationsRead);
 
 // Good practice to use Express to create multiple routes under /api/
 exports.api = functions.https.onRequest(app);
