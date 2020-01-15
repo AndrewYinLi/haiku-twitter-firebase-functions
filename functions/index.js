@@ -50,12 +50,15 @@ exports.api = functions.https.onRequest(app);
 exports.createNotificationOnLike = functions.firestore
   .document("likes/{id}")
   .onCreate(snapshot => {
-    admin
+    return admin
       .firestore()
       .doc(`/haikus/${snapshot.data().haikuID}`)
       .get()
       .then(doc => {
-        if (doc.exists) {
+        if (
+          doc.exists &&
+          doc.data().userHandle !== snapshot.data().userHandle
+        ) {
           return admin
             .firestore()
             .doc(`/notifications/${snapshot.id}`)
@@ -69,9 +72,6 @@ exports.createNotificationOnLike = functions.firestore
             });
         }
       })
-      .then(() => {
-        return;
-      })
       .catch(err => {
         console.error(err);
         return; // no need to send response bc it's a db trigger, not api endpoint
@@ -81,13 +81,10 @@ exports.createNotificationOnLike = functions.firestore
 exports.deleteNotificationOnUnlike = functions.firestore
   .document("likes/{id}")
   .onDelete(snapshot => {
-    admin
+    return admin
       .firestore()
       .doc(`/notifications/${snapshot.id}`)
       .delete()
-      .then(() => {
-        return;
-      })
       .catch(err => {
         console.error(err);
         return err;
@@ -97,12 +94,15 @@ exports.deleteNotificationOnUnlike = functions.firestore
 exports.createNotificationOnComment = functions.firestore
   .document("comments/{id}")
   .onCreate(snapshot => {
-    admin
+    return admin
       .firestore()
       .doc(`/haikus/${snapshot.data().haikuID}`)
       .get()
       .then(doc => {
-        if (doc.exists) {
+        if (
+          doc.exists &&
+          doc.data().userHandle !== snapshot.data().userHandle
+        ) {
           return admin
             .firestore()
             .doc(`/notifications/${snapshot.id}`)
@@ -116,11 +116,72 @@ exports.createNotificationOnComment = functions.firestore
             });
         }
       })
-      .then(() => {
-        return;
+      .catch(err => {
+        console.error(err);
+        return err;
+      });
+  });
+
+// TO-DO: update image in comments
+exports.onUserImageChange = functions.firestore
+  .document("/users/{userID}")
+  .onUpdate(change => {
+    if (change.before.data().imageURL !== change.after.data().imageURL) {
+      const batch = admin.firestore().batch();
+      return admin
+        .firestore()
+        .collection("haikus")
+        .where("userHandle", "==", change.before.data().userHandle)
+        .get()
+        .then(data => {
+          data.forEach(doc => {
+            const haiku = admin.firestore().doc(`/haikus/${doc.id}`);
+            batch.update(haiku, { userImage: change.after.data().imageURL });
+          });
+          return batch.commit();
+        });
+    } else {
+      return true;
+    }
+  });
+
+exports.onHaikuDelete = functions.firestore
+  .document("/haikus/{haikuID}")
+  .onDelete((snapshot, context) => {
+    const haikuID = context.params.haikuID;
+    const batch = admin.firestore().batch();
+    return admin
+      .firestore()
+      .collection("comments")
+      .where("haikuID", "==", haikuID)
+      .get()
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(admin.firestore().doc(`/comments/${doc.id}`));
+        });
+        return admin
+          .firestore()
+          .collection("likes")
+          .where("haikuID", "==", haikuID)
+          .get();
+      })
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(admin.firestore().doc(`/likes/${doc.id}`));
+        });
+        return admin
+          .firestore()
+          .collection("notifications")
+          .where("haikuID", "==", haikuID)
+          .get();
+      })
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(admin.firestore().doc(`/notifications/${doc.id}`));
+        });
+        return batch.commit();
       })
       .catch(err => {
         console.error(err);
-        return; // no need to send response bc it's a db trigger, not api endpoint
       });
   });

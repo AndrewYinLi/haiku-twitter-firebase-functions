@@ -13,7 +13,10 @@ exports.getHaikus = (req, res) => {
           haikuID: doc.id,
           body: doc.data().body,
           userHandle: doc.data().userHandle,
-          createdAt: doc.data().createdAt
+          createdAt: doc.data().createdAt,
+          commentCount: doc.data().commentCount,
+          likeCount: doc.data().likeCount,
+          userImage: doc.data().userImage
         });
       });
       return res.json(haikus);
@@ -84,7 +87,7 @@ exports.getHaiku = (req, res) => {
 
 exports.commentOnHaiku = (req, res) => {
   if (req.body.body.trim() === "") {
-    return res.status(400).json({ error: "Must not be empty" });
+    return res.status(400).json({ comment: "Must not be empty" });
   }
 
   const newComment = {
