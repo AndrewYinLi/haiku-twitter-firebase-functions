@@ -4,6 +4,9 @@ const express = require("express");
 const app = express();
 
 const FBAuth = require("./util/fbAuth");
+
+const { admin } = require("./util/admin");
+
 const {
   getHaikus,
   createHaiku,
@@ -39,3 +42,81 @@ app.get("/user", FBAuth, getAuthenticatedUser);
 
 // Good practice to use Express to create multiple routes under /api/
 exports.api = functions.https.onRequest(app);
+
+exports.createNotificationOnLike = functions.firestore
+  .document("likes/{id}")
+  .onCreate(snapshot => {
+    admin
+      .firestore()
+      .doc(`/haikus/${snapshot.data().haikuID}`)
+      .get()
+      .then(doc => {
+        if (doc.exists) {
+          return admin
+            .firestore()
+            .doc(`/notifications/${snapshot.id}`)
+            .set({
+              createdAt: new Date().toISOString(),
+              recipient: doc.data().userHandle,
+              sender: snapshot.data().userHandle,
+              type: "like",
+              read: false,
+              haikuID: doc.id
+            });
+        }
+      })
+      .then(() => {
+        return;
+      })
+      .catch(err => {
+        console.error(err);
+        return; // no need to send response bc it's a db trigger, not api endpoint
+      });
+  });
+
+exports.deleteNotificationOnUnlike = functions.firestore
+  .document("likes/{id}")
+  .onDelete(snapshot => {
+    admin
+      .firestore()
+      .doc(`/notifications/${snapshot.id}`)
+      .delete()
+      .then(() => {
+        return;
+      })
+      .catch(err => {
+        console.error(err);
+        return err;
+      });
+  });
+
+exports.createNotificationOnComment = functions.firestore
+  .document("comments/{id}")
+  .onCreate(snapshot => {
+    admin
+      .firestore()
+      .doc(`/haikus/${snapshot.data().haikuID}`)
+      .get()
+      .then(doc => {
+        if (doc.exists) {
+          return admin
+            .firestore()
+            .doc(`/notifications/${snapshot.id}`)
+            .set({
+              createdAt: new Date().toISOString(),
+              recipient: doc.data().userHandle,
+              sender: snapshot.data().userHandle,
+              type: "comment",
+              read: false,
+              haikuID: doc.id
+            });
+        }
+      })
+      .then(() => {
+        return;
+      })
+      .catch(err => {
+        console.error(err);
+        return; // no need to send response bc it's a db trigger, not api endpoint
+      });
+  });
