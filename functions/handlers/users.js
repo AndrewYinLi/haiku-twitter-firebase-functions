@@ -200,12 +200,9 @@ exports.login = (req, res) => {
     })
     .catch(err => {
       console.error(err);
-      // if (err.code === "auth/wrong-password") {
-      //   return res
-      //     .status(403)
-      //     .json({ general: "Wrong credentials, please try again" });
-      // }
-      return res.status(500).json({ error: err.code });
+      return res
+        .status(403)
+        .json({ general: "Wrong credentials, please try again" });
     });
 };
 
