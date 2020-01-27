@@ -47,6 +47,8 @@ app.post("/notifications", FBAuth, markNotificationsRead);
 // Good practice to use Express to create multiple routes under /api/
 exports.api = functions.https.onRequest(app);
 
+// Below are listeners for changes in Firestore rather than POST/GET requests
+
 exports.createNotificationOnLike = functions.firestore
   .document("likes/{id}")
   .onCreate(snapshot => {

@@ -1,4 +1,5 @@
 const { admin } = require("../util/admin");
+var syllable = require("syllable");
 
 exports.getHaikus = (req, res) => {
   admin
@@ -25,8 +26,23 @@ exports.getHaikus = (req, res) => {
 };
 
 exports.createHaiku = (req, res) => {
-  if (req.body.body.trim() === "") {
-    return res.status(400).json({ body: "Body must not be empty" });
+  const haikuSplit = req.body.body.split("\n");
+  let errorStr = "";
+  let lineOneResult = syllable(haikuSplit[0]);
+  if (lineOneResult !== 5) {
+    errorStr += "Line 1 has " + lineOneResult + " syllables. ";
+  }
+  let lineTwoResult = syllable(haikuSplit[1]);
+  if (lineTwoResult !== 7) {
+    errorStr += "Line 2 has " + lineTwoResult + " syllables. ";
+  }
+  let lineThreeResult = syllable(haikuSplit[2]);
+  if (lineThreeResult !== 5) {
+    errorStr += "Line 3 has " + lineThreeResult + " syllables.";
+  }
+
+  if (errorStr !== "") {
+    return res.status(400).json({ body: errorStr.trim() });
   }
 
   const newHaiku = {
