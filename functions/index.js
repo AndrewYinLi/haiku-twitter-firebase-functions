@@ -7,6 +7,10 @@ const FBAuth = require("./util/fbAuth");
 
 const { admin } = require("./util/admin");
 
+const cors = require("cors");
+
+app.use(cors());
+
 const {
   getHaikus,
   createHaiku,

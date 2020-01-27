@@ -32,15 +32,25 @@ exports.createHaiku = (req, res) => {
   if (lineOneResult !== 5) {
     errorStr += "Line 1 has " + lineOneResult + " syllables. ";
   }
-  let lineTwoResult = syllable(haikuSplit[1]);
-  if (lineTwoResult !== 7) {
-    errorStr += "Line 2 has " + lineTwoResult + " syllables. ";
+  if (haikuSplit.length > 1) {
+    let lineTwoResult = syllable(haikuSplit[1]);
+    if (lineTwoResult !== 7) {
+      errorStr += "Line 2 has " + lineTwoResult + " syllables. ";
+    }
+  } else {
+    errorStr += "Line 2 is empty. ";
   }
-  let lineThreeResult = syllable(haikuSplit[2]);
-  if (lineThreeResult !== 5) {
-    errorStr += "Line 3 has " + lineThreeResult + " syllables.";
+  if (haikuSplit.length > 2) {
+    let lineThreeResult = syllable(haikuSplit[2]);
+    if (lineThreeResult !== 5) {
+      errorStr += "Line 3 has " + lineThreeResult + " syllables. ";
+    }
+  } else {
+    errorStr += "Line 3 is empty. ";
   }
-
+  if (haikuSplit.length > 3) {
+    errorStr += "You can't have more than 4 lines.";
+  }
   if (errorStr !== "") {
     return res.status(400).json({ body: errorStr.trim() });
   }
